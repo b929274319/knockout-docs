@@ -1,64 +1,176 @@
 # API 参考
 
-本文提供 Knockout.js 的 API 参考文档，包含所有核心功能和常用方法。
+> 本文提供 Knockout.js 的完整 API 参考文档。如果你是初学者，建议先阅读 [快速开始](guide/quickstart.md) 和 [基本概念](guide/concepts.md)。
+
+## 目录
+
+- [核心 API](#核心-api)
+  - [ko.observable](#koobservable) - 创建可观察对象
+  - [ko.observableArray](#koobservablearray) - 创建可观察数组
+  - [ko.computed](#kocomputed) - 创建计算属性
+  - [ko.applyBindings](#koapplybindings) - 应用绑定
+- [绑定 API](#绑定-api)
+  - [文本和外观](#文本和外观绑定)
+  - [表单控件](#表单绑定)
+  - [流程控制](#流程控制绑定)
+- [组件 API](#组件-api)
+  - [注册组件](#注册组件)
+  - [使用组件](#使用组件)
+- [工具函数](#工具函数)
+  - [ko.utils](#koutils)
+  - [ko.extenders](#koextenders)
+- [调试 API](#调试-api)
+- [配置选项](#配置选项)
+- [扩展 API](#扩展-api)
 
 ## 核心 API
 
 ### ko.observable
 
-创建可观察对象。
+创建一个可观察对象，用于跟踪数据变化。
 
+**语法**
 ```javascript
-// 创建
+ko.observable([initialValue])
+```
+
+**参数**
+- `initialValue` (可选): 初始值，可以是任意类型
+
+**返回值**
+- 返回一个可观察对象函数，可以通过 `()` 读取值，通过 `(newValue)` 设置值
+
+**方法**
+- `subscribe(callback[, callbackTarget, event])`: 订阅值变化
+  - `callback`: 值变化时的回调函数
+  - `callbackTarget` (可选): 回调函数的 this 上下文
+  - `event` (可选): 事件类型，可选值：'change'（默认）、'beforeChange'
+- `peek()`: 获取当前值，不建立依赖关系
+- `valueHasMutated()`: 手动触发值变化通知
+- `extend(extenders)`: 扩展可观察对象
+
+**示例**
+```javascript
+// 基本用法
 var name = ko.observable("张三");
-
-// 读取值
-console.log(name());
-
-// 设置值
-name("李四");
+console.log(name());         // 输出: "张三"
+name("李四");               // 设置新值
+console.log(name());         // 输出: "李四"
 
 // 订阅变化
 name.subscribe(function(newValue) {
     console.log("值变化为：" + newValue);
-});
+}, null, "change");
+
+// 使用 peek
+console.log(name.peek());    // 读取值但不建立依赖
+
+// 使用扩展
+var limitedName = ko.observable().extend({ maxLength: 10 });
 ```
 
 ### ko.observableArray
 
-创建可观察数组。
+创建一个可观察数组，继承了普通可观察对象的所有功能，并添加了数组特有的操作方法。
 
+**语法**
 ```javascript
-// 创建
+ko.observableArray([initialArray])
+```
+
+**参数**
+- `initialArray` (可选): 初始数组
+
+**返回值**
+- 返回一个可观察数组函数，可以通过 `()` 读取数组，通过 `(newArray)` 设置整个数组
+
+**数组方法**
+所有原生数组方法都可用，并且会自动触发通知：
+- `push(item)`: 添加项目到末尾
+- `pop()`: 移除并返回最后一项
+- `unshift(item)`: 添加项目到开头
+- `shift()`: 移除并返回第一项
+- `reverse()`: 反转数组
+- `sort([compareFunction])`: 排序数组
+- `splice(index, howMany[, ...items])`: 删除/插入项目
+
+**Knockout 特有方法**
+- `remove(item/predicate)`: 移除匹配的项目
+- `removeAll([items])`: 移除所有或指定项目
+- `destroy(item/predicate)`: 标记项目为已销毁
+- `destroyAll([items])`: 标记所有或指定项目为已销毁
+- `indexOf(item)`: 查找项目索引
+- `slice(start[, end])`: 返回数组的一部分
+
+**示例**
+```javascript
+// 基本用法
 var items = ko.observableArray(["项目1", "项目2"]);
 
 // 数组操作
-items.push("项目3");           // 添加项目
-items.pop();                   // 移除最后一项
-items.unshift("项目0");        // 添加到开头
-items.shift();                // 移除第一项
-items.reverse();              // 反转数组
-items.sort();                 // 排序
-items.splice(1, 1, "新项目");  // 替换项目
+items.push("项目3");                    // 添加到末尾
+console.log(items().length);            // 输出: 3
+console.log(items()[0]);                // 输出: "项目1"
 
-// Knockout 特有方法
-items.remove("项目2");         // 移除特定项
-items.removeAll();            // 移除所有项
-items.destroy("项目1");        // 销毁项目
+// 使用 Knockout 特有方法
+items.remove("项目2");                  // 移除特定项
+items.removeAll(["项目1", "项目3"]);    // 移除多个项
+items.destroyAll();                     // 标记所有项为已销毁
+
+// 链式操作
+items().filter(function(item) {
+    return item.startsWith("项目");
+}).forEach(function(item) {
+    console.log(item);
+});
+
+// 订阅变化
+items.subscribe(function(changes) {
+    console.log("数组变化：", changes);
+}, null, "arrayChange");
 ```
 
 ### ko.computed
 
-创建计算属性。
+创建一个计算属性，其值依赖于其他可观察对象。
 
+**语法**
+```javascript
+ko.computed(evaluator[, targetObject, options])
+// 或
+ko.computed(options)
+```
+
+**参数**
+- `evaluator`: 计算函数，返回计算后的值
+- `targetObject` (可选): 计算函数的 this 上下文
+- `options` (可选): 配置对象，包含以下属性：
+  - `read`: 读取函数
+  - `write` (可选): 写入函数
+  - `owner`: 函数的 this 上下文
+  - `pure`: 是否是纯计算属性
+  - `deferEvaluation`: 是否延迟计算
+  - `disposeWhenNodeIsRemoved`: 当指定 DOM 节点被移除时销毁
+  - `disposeWhen`: 返回 true 时销毁的函数
+
+**返回值**
+- 返回一个计算属性函数，可以通过 `()` 读取值，如果定义了 write 函数，也可以通过 `(newValue)` 设置值
+
+**示例**
 ```javascript
 // 基本计算属性
-this.fullName = ko.computed(function() {
+var firstName = ko.observable("张");
+var lastName = ko.observable("三");
+var fullName = ko.computed(function() {
     return this.firstName() + " " + this.lastName();
 }, this);
 
+console.log(fullName());  // 输出: "张 三"
+firstName("李");         // fullName 自动更新
+console.log(fullName());  // 输出: "李 三"
+
 // 可写计算属性
-this.fullName = ko.computed({
+var fullName = ko.computed({
     read: function() {
         return this.firstName() + " " + this.lastName();
     },
@@ -69,10 +181,21 @@ this.fullName = ko.computed({
     }
 }, this);
 
-// 纯计算属性
-this.total = ko.pureComputed(function() {
+fullName("王 五");      // 自动更新 firstName 和 lastName
+
+// 纯计算属性（性能优化）
+var total = ko.pureComputed(function() {
     return this.price() * this.quantity();
 }, this);
+
+// 延迟计算
+var expensive = ko.computed({
+    read: function() {
+        // 复杂计算
+        return heavyCalculation();
+    },
+    deferEvaluation: true  // 直到首次访问才计算
+});
 ```
 
 ### ko.applyBindings
@@ -98,24 +221,112 @@ ko.applyBindings(context, element);
 
 ### 文本和外观绑定
 
+用于控制元素的文本内容和视觉外观。
+
+#### text 绑定
+
+将文本内容绑定到元素。
+
+**语法**
 ```html
-<!-- 文本绑定 -->
+<element data-bind="text: value"></element>
+```
+
+**参数**
+- `value`: 字符串、数字或可观察对象
+
+**示例**
+```html
 <span data-bind="text: message"></span>
+<span data-bind="text: name() + ' (' + age() + '岁)'"></span>
+```
 
-<!-- HTML 绑定 -->
-<div data-bind="html: htmlContent"></div>
+#### html 绑定
 
-<!-- 可见性绑定 -->
-<div data-bind="visible: isVisible"></div>
+将 HTML 内容绑定到元素。
 
-<!-- 样式绑定 -->
-<div data-bind="css: { active: isActive, error: hasError }"></div>
+**语法**
+```html
+<element data-bind="html: htmlValue"></element>
+```
 
-<!-- 样式绑定 -->
-<div data-bind="style: { color: textColor, display: isVisible() ? 'block' : 'none' }"></div>
+**参数**
+- `htmlValue`: 包含 HTML 的字符串或可观察对象
 
-<!-- 属性绑定 -->
-<img data-bind="attr: { src: imageUrl, alt: imageAlt }">
+**注意事项**
+- 请确保 HTML 内容是安全的，避免 XSS 攻击
+- 如果只需显示文本，优先使用 text 绑定
+
+**示例**
+```html
+<div data-bind="html: description"></div>
+```
+
+#### visible 绑定
+
+控制元素的可见性。
+
+**语法**
+```html
+<element data-bind="visible: shouldShow"></element>
+```
+
+**参数**
+- `shouldShow`: 布尔值或返回布尔值的表达式
+
+**工作原理**
+- true: 显示元素（display: ''）
+- false: 隐藏元素（display: none）
+
+**示例**
+```html
+<div data-bind="visible: isVisible">
+    仅在 isVisible 为 true 时显示
+</div>
+
+<div data-bind="visible: items().length > 0">
+    有项目时显示
+</div>
+```
+
+#### css 绑定
+
+动态添加或移除 CSS 类。
+
+**语法**
+```html
+<element data-bind="css: { className: condition }"></element>
+```
+
+**参数**
+- 对象，其中：
+  - key: CSS 类名
+  - value: 布尔值或返回布尔值的表达式
+
+**示例**
+```html
+<!-- 单个类 -->
+<div data-bind="css: { active: isActive }"></div>
+
+<!-- 多个类 -->
+<div data-bind="css: { 
+    active: isActive,
+    error: hasError,
+    highlight: isSelected
+}"></div>
+
+<!-- 使用计算属性 -->
+<div data-bind="css: cssClasses"></div>
+```
+
+```javascript
+this.cssClasses = ko.computed(function() {
+    return {
+        active: this.isActive(),
+        error: this.hasError(),
+        highlight: this.isSelected()
+    };
+}, this);
 ```
 
 ### 表单绑定
@@ -301,7 +512,7 @@ ko.options.onError = function(error) {
 
 ## 扩展 API
 
-### 自定义绑定
+### 定义绑定
 
 ```javascript
 // 注册自定义绑定
@@ -341,8 +552,228 @@ function CustomProvider() {
 ko.bindingProvider.instance = new CustomProvider();
 ```
 
-## 下一步
+## 代码片段
 
-- 了解 [最佳实践](advanced/performance.md)
-- 学习 [组件开发](advanced/components.md)
-- 探索 [自定义绑定](advanced/custom-bindings.md) 
+### 基本模式
+
+```javascript
+// 基本视图模型
+function ViewModel() {
+    // 可观察属性
+    this.firstName = ko.observable("张");
+    this.lastName = ko.observable("三");
+    
+    // 计算属性
+    this.fullName = ko.computed(function() {
+        return this.firstName() + " " + this.lastName();
+    }, this);
+    
+    // 事件处理
+    this.save = function() {
+        // 处理保存
+        var data = {
+            firstName: this.firstName(),
+            lastName: this.lastName()
+        };
+        // 发送到服务器...
+    }.bind(this);
+}
+
+// 应用绑定
+ko.applyBindings(new ViewModel());
+```
+
+### 常见模式
+
+```javascript
+// 延迟加载
+function ViewModel() {
+    var self = this;
+    self.items = ko.observableArray();
+    self.isLoading = ko.observable(false);
+    
+    self.loadItems = function() {
+        self.isLoading(true);
+        fetch('/api/items')
+            .then(response => response.json())
+            .then(data => {
+                self.items(data);
+                self.isLoading(false);
+            });
+    };
+}
+
+// 表单处理
+function FormViewModel() {
+    var self = this;
+    
+    // 表单字段
+    self.username = ko.observable().extend({
+        required: true,
+        minLength: 3
+    });
+    self.email = ko.observable().extend({
+        required: true,
+        email: true
+    });
+    
+    // 验证状态
+    self.errors = ko.validation.group(self);
+    
+    // 提交处理
+    self.submit = function() {
+        if (self.errors().length === 0) {
+            // 提交表单...
+        }
+    };
+}
+
+// 分页列表
+function PaginatedList() {
+    var self = this;
+    
+    self.items = ko.observableArray();
+    self.currentPage = ko.observable(1);
+    self.itemsPerPage = ko.observable(10);
+    self.totalItems = ko.observable(0);
+    
+    self.totalPages = ko.computed(function() {
+        return Math.ceil(self.totalItems() / self.itemsPerPage());
+    });
+    
+    self.loadPage = function(page) {
+        // 加载指定页的数据...
+    };
+}
+```
+
+## 最佳实践
+
+### 1. 性能优化
+
+```javascript
+// 使用纯计算属性
+this.total = ko.pureComputed(function() {
+    return this.price() * this.quantity();
+}, this);
+
+// 避免不必要的计算
+this.items = ko.observableArray();
+this.filteredItems = ko.computed(function() {
+    var search = this.searchTerm().toLowerCase();
+    return this.items().filter(function(item) {
+        return item.name().toLowerCase().includes(search);
+    });
+}, this).extend({ rateLimit: { timeout: 500, method: "notifyWhenChangesStop" } });
+```
+
+### 2. 内存管理
+
+```javascript
+// 正确销毁订阅
+var subscription = myObservable.subscribe(function() {
+    // 处理变化
+});
+
+// 在不需要时取消订阅
+subscription.dispose();
+
+// 使用 computedContext
+ko.computed(function() {
+    // 在计算属性内部订阅
+    myObservable.subscribe(function() {
+        // 处理变化
+    }, null, "change", this);
+}, this);
+```
+
+### 3. 组件化
+
+```javascript
+// 定义可重用组件
+ko.components.register('user-card', {
+    viewModel: function(params) {
+        this.user = params.user;
+        this.onEdit = params.onEdit;
+    },
+    template: 
+        '<div class="user-card">\
+            <h3 data-bind="text: user().name"></h3>\
+            <button data-bind="click: onEdit">编辑</button>\
+        </div>'
+});
+
+// 使用组件
+<user-card params="
+    user: currentUser,
+    onEdit: editUser
+"></user-card>
+```
+
+### 4. 错误处理
+
+```javascript
+// 全局错误处理
+ko.options.onError = function(error) {
+    console.error('Knockout 错误:', error);
+    // 上报错误...
+};
+
+// 优雅降级
+<div data-bind="if: data">
+    <!-- 有数据时显示 -->
+    <div data-bind="with: data">
+        <span data-bind="text: name"></span>
+    </div>
+</div>
+<div data-bind="ifnot: data">
+    <!-- 无数据时显示 -->
+    <p>暂无数据</p>
+</div>
+```
+
+## 调试技巧
+
+### 1. 检查绑定上下文
+
+```javascript
+// 在控制台中使用
+var element = document.querySelector('#myElement');
+var context = ko.contextFor(element);
+var data = ko.dataFor(element);
+
+console.log('上下文:', context);
+console.log('数据:', data);
+```
+
+### 2. 追踪依赖
+
+```javascript
+// 在计算属性中添加日志
+this.total = ko.computed(function() {
+    console.log('计算 total...');
+    console.log('price:', this.price());
+    console.log('quantity:', this.quantity());
+    return this.price() * this.quantity();
+}, this);
+```
+
+### 3. 监控变化
+
+```javascript
+// 订阅所有变化
+myObservable.subscribe(function(newValue) {
+    console.log('值变化为:', newValue);
+}, null, 'change');
+
+// 订阅数组变化
+myArray.subscribe(function(changes) {
+    console.log('数组变化:', changes);
+}, null, 'arrayChange');
+```
+
+## 相关资源
+
+- [Knockout.js 官方文档](http://knockoutjs.com/documentation/introduction.html)
+- [Knockout.js GitHub 仓库](https://github.com/knockout/knockout)
+- [Knockout.js 中文社区](https://github.com/b929274319/knockout-docs) 
