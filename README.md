@@ -1,5 +1,7 @@
 # Knockout.js 中文文档
 
+> 在线文档地址：[https://b929274319.github.io/knockout-docs/#/](https://b929274319.github.io/knockout-docs/#/)
+
 > 简单易用的 JavaScript MVVM 框架
 
 ## 什么是 Knockout.js？
