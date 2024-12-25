@@ -69,14 +69,35 @@
           var footer = [
             '<hr/>',
             '<footer>',
-            '<span>最后更新时间：{docsify-updated}</span>',
+            '<span>最后更新时间：<span id="last-modified"></span></span>',
             '<br/>',
             '<span>Powered by <a href="https://docsify.js.org" target="_blank">docsify</a></span>',
             '</footer>'
           ].join('');
 
-          hook.afterEach(function(html) {
-            return html + footer;
+          hook.afterEach(function(html, next) {
+            var path = window.location.hash.match(/#\/(.*?)(?:\?|$)/);
+            var currentPath = path ? path[1] : 'README.md';
+            if (currentPath === '/') currentPath = 'README.md';
+            if (!currentPath.endsWith('.md')) currentPath += '.md';
+            
+            setTimeout(function() {
+              var lastModified = window.$docsify.lastModifiedTime && window.$docsify.lastModifiedTime[currentPath];
+              if (lastModified) {
+                var date = new Date(lastModified);
+                document.getElementById('last-modified').textContent = date.toLocaleString('zh-CN', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+              } else {
+                document.getElementById('last-modified').textContent = '未知';
+              }
+            }, 100);
+            
+            next(html + footer);
           });
         }
       ]
@@ -92,5 +113,6 @@
   <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
   <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-markdown.min.js"></script>
   <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/external-script.min.js"></script>
+  <script src="last-modified.js"></script>
 </body>
 </html> 

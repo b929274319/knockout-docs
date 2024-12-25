@@ -23,6 +23,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Generate last modified time
+        run: |
+          echo "window.\$docsify.lastModifiedTime = {" > last-modified.js
+          git ls-files | while read file; do
+            if [[ -f "$file" && "$file" == *.md ]]; then
+              time=$(git log -1 --format="%ad" --date=iso8601 -- "$file")
+              echo "  '$file': '$time'," >> last-modified.js
+            fi
+          done
+          echo "};" >> last-modified.js
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
