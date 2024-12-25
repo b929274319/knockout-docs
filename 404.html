@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>页面未找到 - Knockout.js 中文文档</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+    <style>
+        .error-page {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .error-code {
+            font-size: 120px;
+            color: #42b983;
+            margin: 0;
+        }
+
+        .error-message {
+            font-size: 24px;
+            color: #34495e;
+            margin: 20px 0;
+        }
+
+        .error-description {
+            color: #7f8c8d;
+            margin: 20px 0;
+        }
+
+        .error-actions {
+            margin-top: 40px;
+        }
+
+        .error-actions a {
+            display: inline-block;
+            margin: 0 10px;
+            padding: 10px 20px;
+            color: #fff;
+            background-color: #42b983;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .error-actions a:hover {
+            background-color: #3aa876;
+        }
+
+        .error-suggestions {
+            margin-top: 40px;
+            text-align: left;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .error-suggestions h3 {
+            color: #34495e;
+        }
+
+        .error-suggestions ul {
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-page">
+        <h1 class="error-code">404</h1>
+        <h2 class="error-message">页面未找到</h2>
+        <p class="error-description">抱歉，您访问的页面不存在或已被移动。</p>
+        
+        <div class="error-actions">
+            <a href="/#/">返回首页</a>
+            <a href="/#/guide/quickstart">快速开始</a>
+        </div>
+
+        <div class="error-suggestions">
+            <h3>您可以尝试：</h3>
+            <ul>
+                <li>检查 URL 是否正确</li>
+                <li>返回首页浏览完整文档</li>
+                <li>查看快速开始指南</li>
+                <li>搜索您需要的内容</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        window.$docsify = {
+            name: 'Knockout.js 中文文档',
+            repo: '',
+            loadSidebar: true,
+            subMaxLevel: 3,
+            auto2top: true,
+            search: {
+                maxAge: 86400000,
+                paths: 'auto',
+                placeholder: '搜索',
+                noData: '未找到结果',
+                depth: 6
+            }
+        }
+    </script>
+    <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+    <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-javascript.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
+</body>
+</html> 
